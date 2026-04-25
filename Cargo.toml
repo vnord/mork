@@ -1,0 +1,33 @@
+[package]
+name = "mork"
+version = "0.1.0"
+edition = "2024"
+
+[features]
+default = ["combat", "camera", "input", "audio", "debug_ui"]
+combat = []
+camera = []
+input = []
+audio = []
+debug_ui = []
+procgen = []
+roguelite = []
+
+[dependencies]
+bevy = "0.18"
+bevy_rapier3d = { version = "0.33", features = ["debug-render-3d"] }
+leafwing-input-manager = "0.20"
+bevy_egui = "0.39"
+bevy_kira_audio = "0.25"
+
+[dev-dependencies]
+
+[lints.clippy]
+pedantic = { level = "warn", priority = -1 }
+nursery = { level = "warn", priority = -1 }
+
+[profile.dev]
+opt-level = 1
+
+[profile.dev.package."*"]
+opt-level = 3

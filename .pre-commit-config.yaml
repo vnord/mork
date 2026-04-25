@@ -1,0 +1,57 @@
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v6.0.0
+    hooks:
+      - id: trailing-whitespace
+        exclude: ^(Cargo\.lock|assets/)
+      - id: end-of-file-fixer
+        exclude: ^(Cargo\.lock|assets/)
+      - id: check-yaml
+      - id: check-added-large-files
+        args: ["--maxkb=1024"]
+      - id: check-merge-conflict
+      - id: detect-private-key
+
+  - repo: local
+    hooks:
+      - id: cargo-fmt
+        name: cargo fmt
+        entry: cargo fmt --all --
+        language: system
+        types: [rust]
+        pass_filenames: false
+
+      - id: cargo-clippy
+        name: cargo clippy
+        entry: cargo clippy --all-targets --all-features -- -D warnings
+        language: system
+        types: [rust]
+        pass_filenames: false
+
+      - id: prettier
+        name: prettier
+        entry: prettier --write
+        language: system
+        types_or: [markdown, yaml, json, css, html, javascript]
+        exclude: ^(Cargo\.lock|assets/)
+
+      - id: taplo-fmt
+        name: taplo fmt
+        entry: taplo fmt
+        language: system
+        types: [toml]
+
+      - id: gitleaks
+        name: gitleaks
+        entry: gitleaks protect --staged --verbose
+        language: system
+        pass_filenames: false
+
+      - id: no-commit-to-main
+        name: no commit to main
+        entry:
+          bash -c 'branch=$(git symbolic-ref HEAD 2>/dev/null); [ "$branch" = "refs/heads/main" ] &&
+          echo "Direct commits to main are forbidden. Use a feature branch." && exit 1 || exit 0'
+        language: system
+        pass_filenames: false
+        always_run: true
