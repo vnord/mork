@@ -1,7 +1,10 @@
 use bevy::prelude::*;
-use bevy_rapier3d::prelude::NoUserData;
 use mork::plugins::{combat::CombatPlugin, enemy::EnemyPlugin};
 use mork::systems::input::Action;
+
+use bevy_rapier3d::prelude::{Collider, KinematicCharacterController, NoUserData, RigidBody};
+use leafwing_input_manager::prelude::{GamepadStick, InputMap, VirtualDPad};
+use mork::components::player::Player;
 
 fn main() {
     App::new()
@@ -14,9 +17,7 @@ fn main() {
         }))
         .add_plugins(bevy_rapier3d::prelude::RapierPhysicsPlugin::<NoUserData>::default())
         .add_plugins(bevy_rapier3d::prelude::RapierDebugRenderPlugin::default())
-        .add_plugins(
-            leafwing_input_manager::prelude::InputManagerPlugin::<Action>::default(),
-        )
+        .add_plugins(leafwing_input_manager::prelude::InputManagerPlugin::<Action>::default())
         .add_plugins(bevy_egui::EguiPlugin::default())
         .add_plugins(bevy_kira_audio::AudioPlugin)
         .add_plugins(CombatPlugin)
@@ -30,6 +31,10 @@ fn setup(
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
 ) {
+    let input_map = InputMap::default()
+        .with_dual_axis(Action::Move, VirtualDPad::wasd())
+        .with_dual_axis(Action::Move, GamepadStick::LEFT);
+
     commands.spawn((
         Camera3d::default(),
         Transform::from_xyz(0.0, 5.0, 10.0).looking_at(Vec3::ZERO, Vec3::Y),
@@ -51,5 +56,19 @@ fn setup(
         })),
         bevy_rapier3d::prelude::RigidBody::Fixed,
         bevy_rapier3d::prelude::Collider::cuboid(10.0, 0.1, 10.0),
+    ));
+
+    commands.spawn((
+        Player,
+        input_map,
+        Mesh3d(meshes.add(Capsule3d::new(0.4, 1.2))),
+        MeshMaterial3d(materials.add(StandardMaterial {
+            base_color: Color::srgb(0.8, 0.7, 0.6),
+            ..default()
+        })),
+        Transform::from_xyz(0.0, 1.0, 0.0),
+        RigidBody::KinematicPositionBased,
+        Collider::capsule_y(0.6, 0.4),
+        KinematicCharacterController::default(),
     ));
 }
