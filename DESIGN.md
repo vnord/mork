@@ -105,3 +105,22 @@ Free orbit when roaming, snap-to-locked-enemy in combat. State machine switching
 - Primary: AI coding assistant for patterns and boilerplate
 - Secondary: Bevy examples, Bevy Discord, docs.rs
 - Always verify AI-generated Bevy API calls against docs.rs (stale training data)
+
+## Development Methodology: TDD + Guided Exercises
+
+**Test-Driven Development wherever possible.** Pure logic (movement math, combat calculations, state
+machines) is extracted into pure functions and developed test-first. The workflow is:
+
+1. **AI writes failing tests** for the pure function
+2. **You implement** the function to make the tests pass
+3. `cargo test` confirms
+
+**For ECS wiring** (spawning entities, reading input, applying forces), unit tests aren't practical.
+These are developed as **guided exercises**:
+
+1. AI describes what to build and gives hints about the Bevy API
+2. You write the code
+3. `cargo run` confirms visually
+
+The rule: if it's a pure function with inputs and outputs, write tests first. If it's ECS glue code,
+learn by doing with guidance.
