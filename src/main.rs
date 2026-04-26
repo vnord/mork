@@ -1,10 +1,7 @@
-mod components;
-mod plugins;
-mod resources;
-mod systems;
-
 use bevy::prelude::*;
 use bevy_rapier3d::prelude::NoUserData;
+use mork::plugins::{combat::CombatPlugin, enemy::EnemyPlugin};
+use mork::systems::input::Action;
 
 fn main() {
     App::new()
@@ -17,11 +14,13 @@ fn main() {
         }))
         .add_plugins(bevy_rapier3d::prelude::RapierPhysicsPlugin::<NoUserData>::default())
         .add_plugins(bevy_rapier3d::prelude::RapierDebugRenderPlugin::default())
-        .add_plugins(leafwing_input_manager::prelude::InputManagerPlugin::<
-            input::Action,
-        >::default())
+        .add_plugins(
+            leafwing_input_manager::prelude::InputManagerPlugin::<Action>::default(),
+        )
         .add_plugins(bevy_egui::EguiPlugin::default())
         .add_plugins(bevy_kira_audio::AudioPlugin)
+        .add_plugins(CombatPlugin)
+        .add_plugins(EnemyPlugin)
         .add_systems(Startup, setup)
         .run();
 }
@@ -53,19 +52,4 @@ fn setup(
         bevy_rapier3d::prelude::RigidBody::Fixed,
         bevy_rapier3d::prelude::Collider::cuboid(10.0, 0.1, 10.0),
     ));
-}
-
-mod input {
-    use bevy::prelude::*;
-    use leafwing_input_manager::prelude::*;
-
-    #[derive(Actionlike, PartialEq, Eq, Clone, Copy, Hash, Debug, Reflect)]
-    pub enum Action {
-        Move,
-        Dodge,
-        LightAttack,
-        HeavyAttack,
-        Block,
-        LockOn,
-    }
 }

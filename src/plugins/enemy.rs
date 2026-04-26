@@ -1,6 +1,5 @@
 use bevy::prelude::*;
 
-#[expect(dead_code)]
 pub struct EnemyPlugin;
 
 impl Plugin for EnemyPlugin {

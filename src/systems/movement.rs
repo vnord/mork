@@ -1,0 +1,73 @@
+use bevy::prelude::*;
+
+pub struct MovementIntent {
+    pub forward: f32,
+    pub strafe: f32,
+}
+
+#[must_use]
+pub fn calculate_movement_direction(intent: &MovementIntent) -> Vec3 {
+    let direction = Vec3::new(intent.strafe, 0.0, -intent.forward);
+
+    direction.normalize_or_zero()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use bevy::math::Vec3;
+
+    fn intent(forward: f32, strafe: f32) -> MovementIntent {
+        MovementIntent { forward, strafe }
+    }
+
+    #[test]
+    fn no_input_returns_zero() {
+        assert_eq!(calculate_movement_direction(&intent(0.0, 0.0)), Vec3::ZERO);
+    }
+
+    #[test]
+    fn forward_is_negative_z() {
+        let result = calculate_movement_direction(&intent(1.0, 0.0));
+        assert_eq!(result, Vec3::new(0.0, 0.0, -1.0));
+    }
+
+    #[test]
+    fn backward_is_positive_z() {
+        let result = calculate_movement_direction(&intent(-1.0, 0.0));
+        assert_eq!(result, Vec3::new(0.0, 0.0, 1.0));
+    }
+
+    #[test]
+    fn left_is_negative_x() {
+        let result = calculate_movement_direction(&intent(0.0, -1.0));
+        assert_eq!(result, Vec3::new(-1.0, 0.0, 0.0));
+    }
+
+    #[test]
+    fn right_is_positive_x() {
+        let result = calculate_movement_direction(&intent(0.0, 1.0));
+        assert_eq!(result, Vec3::new(1.0, 0.0, 0.0));
+    }
+
+    #[test]
+    fn forward_right_diagonal_is_normalized() {
+        let result = calculate_movement_direction(&intent(1.0, 1.0));
+        assert!((result.length() - 1.0).abs() < 0.001);
+        assert!(result.x > 0.0);
+        assert!(result.z < 0.0);
+        assert!(result.y.abs() < 0.001);
+    }
+
+    #[test]
+    fn opposite_inputs_cancel() {
+        let result = calculate_movement_direction(&intent(0.0, 0.0));
+        assert_eq!(result, Vec3::ZERO);
+    }
+
+    #[test]
+    fn y_is_always_zero() {
+        let result = calculate_movement_direction(&intent(1.0, -1.0));
+        assert!(result.y.abs() < 0.001);
+    }
+}

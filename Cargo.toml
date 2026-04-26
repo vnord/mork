@@ -3,6 +3,10 @@ name = "mork"
 version = "0.1.0"
 edition = "2024"
 
+[lib]
+name = "mork"
+path = "src/lib.rs"
+
 [features]
 default = ["combat", "camera", "input", "audio", "debug_ui"]
 combat = []
