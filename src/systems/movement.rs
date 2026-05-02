@@ -6,6 +6,14 @@ pub struct MovementIntent {
 }
 
 #[must_use]
+pub const fn movement_intent_from_axis(axis: Vec2) -> MovementIntent {
+    MovementIntent {
+        forward: axis.y,
+        strafe: axis.x,
+    }
+}
+
+#[must_use]
 pub fn calculate_movement_direction(intent: &MovementIntent) -> Vec3 {
     let direction = Vec3::new(intent.strafe, 0.0, -intent.forward);
 
@@ -69,5 +77,12 @@ mod tests {
     fn y_is_always_zero() {
         let result = calculate_movement_direction(&intent(1.0, -1.0));
         assert!(result.y.abs() < 0.001);
+    }
+
+    #[test]
+    fn axis_values_map_to_movement_intent() {
+        let intent = movement_intent_from_axis(Vec2::new(-0.25, 0.75));
+        assert!((intent.forward - 0.75).abs() < 0.001);
+        assert!((intent.strafe + 0.25).abs() < 0.001);
     }
 }
