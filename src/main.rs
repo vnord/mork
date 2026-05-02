@@ -3,8 +3,9 @@ use mork::plugins::{combat::CombatPlugin, enemy::EnemyPlugin};
 use mork::systems::input::Action;
 
 use bevy_rapier3d::prelude::{Collider, KinematicCharacterController, NoUserData, RigidBody};
-use leafwing_input_manager::prelude::{GamepadStick, InputMap, VirtualDPad};
+use leafwing_input_manager::prelude::{ActionState, GamepadStick, InputMap, VirtualDPad};
 use mork::components::player::Player;
+use mork::systems::movement::{calculate_movement_direction, movement_intent_from_axis};
 
 fn main() {
     App::new()
@@ -23,6 +24,7 @@ fn main() {
         .add_plugins(CombatPlugin)
         .add_plugins(EnemyPlugin)
         .add_systems(Startup, setup)
+        .add_systems(Update, move_player)
         .run();
 }
 
@@ -31,7 +33,6 @@ fn setup(
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
 ) {
-
     commands.spawn((
         Name::new("Main Camera"),
         Camera3d::default(),
@@ -76,4 +77,20 @@ fn setup(
         Collider::capsule_y(0.6, 0.4),
         KinematicCharacterController::default(),
     ));
+}
+
+fn move_player(
+    time: Res<Time>,
+    mut query: Query<(&ActionState<Action>, &mut KinematicCharacterController), With<Player>>,
+) {
+    let Ok((action_state, mut controller)) = query.single_mut() else {
+        return;
+    };
+
+    let axis = action_state.clamped_axis_pair(&Action::Move);
+    let intent = movement_intent_from_axis(axis);
+    let direction = calculate_movement_direction(&intent);
+    let speed = 5.0;
+
+    controller.translation = Some(direction * speed * time.delta_secs());
 }
