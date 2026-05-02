@@ -31,16 +31,15 @@ fn setup(
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
 ) {
-    let input_map = InputMap::default()
-        .with_dual_axis(Action::Move, VirtualDPad::wasd())
-        .with_dual_axis(Action::Move, GamepadStick::LEFT);
 
     commands.spawn((
+        Name::new("Main Camera"),
         Camera3d::default(),
         Transform::from_xyz(0.0, 5.0, 10.0).looking_at(Vec3::ZERO, Vec3::Y),
     ));
 
     commands.spawn((
+        Name::new("Moonlight"),
         DirectionalLight {
             illuminance: 10_000.0,
             ..default()
@@ -49,6 +48,7 @@ fn setup(
     ));
 
     commands.spawn((
+        Name::new("Arena Floor"),
         Mesh3d(meshes.add(Plane3d::default().mesh().size(20.0, 20.0))),
         MeshMaterial3d(materials.add(StandardMaterial {
             base_color: Color::srgb(0.3, 0.3, 0.3),
@@ -58,7 +58,12 @@ fn setup(
         bevy_rapier3d::prelude::Collider::cuboid(10.0, 0.1, 10.0),
     ));
 
+    let input_map = InputMap::default()
+        .with_dual_axis(Action::Move, VirtualDPad::wasd())
+        .with_dual_axis(Action::Move, GamepadStick::LEFT);
+
     commands.spawn((
+        Name::new("Player"),
         Player,
         input_map,
         Mesh3d(meshes.add(Capsule3d::new(0.4, 1.2))),
