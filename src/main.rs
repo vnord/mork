@@ -1,4 +1,5 @@
 use bevy::prelude::*;
+use mork::components::camera::FollowCamera;
 use mork::components::transform::PlayerTransform;
 use mork::plugins::{combat::CombatPlugin, enemy::EnemyPlugin};
 use mork::systems::input::Action;
@@ -38,6 +39,7 @@ fn setup(
     commands.spawn((
         Name::new("Main Camera"),
         Camera3d::default(),
+        FollowCamera::default(),
         Transform::from_xyz(0.0, 5.0, 10.0).looking_at(Vec3::new(0.0, 1.0, 0.0), Vec3::Y),
     ));
 
@@ -82,6 +84,7 @@ fn setup(
     ));
 }
 
+#[allow(clippy::needless_pass_by_value)]
 fn move_player(
     time: Res<Time>,
     mut query: Query<(&ActionState<Action>, &mut KinematicCharacterController), With<Player>>,
@@ -98,19 +101,27 @@ fn move_player(
     controller.translation = Some(direction * speed * time.delta_secs());
 }
 
+#[allow(clippy::needless_pass_by_value, clippy::type_complexity)]
 fn follow_camera(
+    time: Res<Time>,
     player_transform: Query<&Transform, (With<PlayerTransform>, Without<Camera3d>)>,
-    mut camera_transform: Query<&mut Transform, (With<Camera3d>, Without<PlayerTransform>)>,
+    mut camera_transform: Query<
+        (&FollowCamera, &mut Transform),
+        (With<Camera3d>, Without<PlayerTransform>),
+    >,
 ) {
     let Ok(player_transform) = player_transform.single() else {
         return;
     };
 
-    let Ok(mut camera_transform) = camera_transform.single_mut() else {
+    let Ok((follow_camera, mut camera_transform)) = camera_transform.single_mut() else {
         return;
     };
 
-    let offset = Vec3::new(0.0, 5.0, 10.0);
-    camera_transform.translation = player_transform.translation + offset;
-    camera_transform.look_at(player_transform.translation, Vec3::Y);
+    let target = player_transform.translation + follow_camera.look_at_offset;
+    let desired_position = player_transform.translation + follow_camera.offset;
+    let alpha = 1.0 - (-follow_camera.sharpness * time.delta_secs()).exp();
+
+    camera_transform.translation = camera_transform.translation.lerp(desired_position, alpha);
+    camera_transform.look_at(target, Vec3::Y);
 }
