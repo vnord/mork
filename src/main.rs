@@ -4,8 +4,8 @@ use bevy_rapier3d::prelude::{
     Collider, LockedAxes, NoUserData, PhysicsSet, QueryFilter, ReadRapierContext, RigidBody,
 };
 use bevy_third_person_camera::{
-    CustomGamepadSettings, ThirdPersonCamera, ThirdPersonCameraPlugin, ThirdPersonCameraTarget,
-    Zoom,
+    CameraSyncSet, CustomGamepadSettings, ThirdPersonCamera, ThirdPersonCameraPlugin,
+    ThirdPersonCameraTarget, Zoom,
 };
 use bevy_tnua::builtins::{
     TnuaBuiltinJump, TnuaBuiltinJumpConfig, TnuaBuiltinWalk, TnuaBuiltinWalkConfig,
@@ -25,6 +25,7 @@ use mork::systems::movement::{
 };
 
 const STICK_DEADZONE: f32 = 0.2;
+const CAMERA_COLLISION_MARGIN: f32 = 0.2;
 
 #[derive(TnuaScheme)]
 #[scheme(basis = TnuaBuiltinWalk)]
@@ -51,8 +52,10 @@ fn main() {
         .add_plugins(bevy_kira_audio::AudioPlugin)
         .add_plugins(CombatPlugin)
         .add_plugins(EnemyPlugin)
+        .configure_sets(PostUpdate, CameraSyncSet.after(PhysicsSet::StepSimulation))
         .add_systems(Startup, setup)
         .add_systems(Update, move_player.in_set(TnuaUserControlsSystems))
+        .add_systems(PostUpdate, prevent_camera_obstruction.after(CameraSyncSet))
         .run();
 }
 
@@ -168,4 +171,41 @@ fn move_player(
     if action_state.pressed(&Action::Jump) {
         controller.action(MovementScheme::Jump(TnuaBuiltinJump::default()));
     }
+}
+
+#[allow(clippy::needless_pass_by_value, clippy::type_complexity)]
+fn prevent_camera_obstruction(
+    rapier_context: ReadRapierContext,
+    player: Query<(Entity, &Transform), With<ThirdPersonCameraTarget>>,
+    mut camera: Query<&mut Transform, (With<ThirdPersonCamera>, Without<ThirdPersonCameraTarget>)>,
+) {
+    let Ok(rapier_context) = rapier_context.single() else {
+        return;
+    };
+    let Ok((player_entity, player_transform)) = player.single() else {
+        return;
+    };
+    let Ok(mut camera_transform) = camera.single_mut() else {
+        return;
+    };
+
+    let ray_origin = player_transform.translation;
+    let camera_offset = camera_transform.translation - ray_origin;
+    let camera_distance = camera_offset.length();
+    let Some(ray_direction) = Dir3::new(camera_offset).ok() else {
+        return;
+    };
+
+    let filter = QueryFilter::only_fixed()
+        .exclude_sensors()
+        .exclude_rigid_body(player_entity);
+
+    let Some((_entity, time_of_impact)) =
+        rapier_context.cast_ray(ray_origin, *ray_direction, camera_distance, true, filter)
+    else {
+        return;
+    };
+
+    let adjusted_distance = (time_of_impact - CAMERA_COLLISION_MARGIN).max(0.0);
+    camera_transform.translation = ray_origin + *ray_direction * adjusted_distance;
 }
