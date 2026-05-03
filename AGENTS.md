@@ -17,6 +17,17 @@ game.
   steps.
 - Keep explanations concrete and tied to the current files.
 
+## Library Preference
+
+- Prefer well-maintained, functional Rust/Bevy crates or plugins over custom implementations for
+  established game systems such as camera controllers, character controllers, input helpers,
+  physics queries, pathfinding, UI widgets, and asset pipelines.
+- Before building a custom solution for a common subsystem, check for current libraries, evaluate
+  maintenance status, Bevy version compatibility, scope fit, and integration cost, then explain the
+  recommendation.
+- Use custom code when the project is intentionally learning the underlying mechanic, when no
+  suitable maintained library exists, or when the library would add more complexity than it removes.
+
 ## Version Control
 
 Use `jj` (Jujutsu) for version control workflow guidance in this repo.
