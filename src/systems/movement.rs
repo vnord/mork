@@ -20,6 +20,23 @@ pub fn calculate_movement_direction(intent: &MovementIntent) -> Vec3 {
     direction.normalize_or_zero()
 }
 
+#[must_use]
+pub fn calculate_camera_relative_movement_direction(
+    intent: &MovementIntent,
+    camera_forward: Vec3,
+    camera_right: Vec3,
+) -> Vec3 {
+    let forward = flatten(camera_forward);
+    let right = flatten(camera_right);
+
+    (forward * intent.forward + right * intent.strafe).normalize_or_zero()
+}
+
+#[must_use]
+fn flatten(direction: Vec3) -> Vec3 {
+    Vec3::new(direction.x, 0.0, direction.z).normalize_or_zero()
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -84,5 +101,37 @@ mod tests {
         let intent = movement_intent_from_axis(Vec2::new(-0.25, 0.75));
         assert!((intent.forward - 0.75).abs() < 0.001);
         assert!((intent.strafe + 0.25).abs() < 0.001);
+    }
+
+    #[test]
+    fn camera_relative_forward_uses_flat_camera_forward() {
+        let result = calculate_camera_relative_movement_direction(
+            &intent(1.0, 0.0),
+            Vec3::new(1.0, -1.0, 0.0),
+            Vec3::Z,
+        );
+
+        assert!((result - Vec3::X).length() < 0.001);
+    }
+
+    #[test]
+    fn camera_relative_strafe_uses_flat_camera_right() {
+        let result = calculate_camera_relative_movement_direction(
+            &intent(0.0, -1.0),
+            Vec3::NEG_Z,
+            Vec3::new(0.0, 1.0, 1.0),
+        );
+
+        assert!((result - Vec3::NEG_Z).length() < 0.001);
+    }
+
+    #[test]
+    fn camera_relative_diagonal_is_normalized() {
+        let result =
+            calculate_camera_relative_movement_direction(&intent(1.0, 1.0), Vec3::NEG_Z, Vec3::X);
+
+        assert!((result.length() - 1.0).abs() < 0.001);
+        assert!(result.x > 0.0);
+        assert!(result.z < 0.0);
     }
 }
