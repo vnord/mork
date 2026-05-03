@@ -14,17 +14,15 @@ use bevy_tnua::prelude::{
     TnuaConfig, TnuaController, TnuaControllerPlugin, TnuaScheme, TnuaUserControlsSystems,
 };
 use bevy_tnua_rapier3d::prelude::{TnuaRapier3dPlugin, TnuaRapier3dSensorShape};
-use leafwing_input_manager::input_processing::WithDualAxisProcessingPipelineExt;
-use leafwing_input_manager::prelude::{ActionState, GamepadStick, InputMap, VirtualDPad};
+use leafwing_input_manager::prelude::ActionState;
 use mork::components::player::Player;
 use mork::components::transform::PlayerTransform;
 use mork::plugins::{combat::CombatPlugin, enemy::EnemyPlugin};
-use mork::systems::input::Action;
+use mork::systems::input::{default_input_map, Action};
 use mork::systems::movement::{
     calculate_camera_relative_movement_direction, movement_intent_from_axis,
 };
 
-const STICK_DEADZONE: f32 = 0.2;
 const CAMERA_COLLISION_MARGIN: f32 = 0.2;
 
 #[derive(TnuaScheme)]
@@ -100,21 +98,12 @@ fn setup(
         bevy_rapier3d::prelude::Collider::cuboid(10.0, 0.1, 10.0),
     ));
 
-    let input_map = InputMap::default()
-        .with_dual_axis(Action::Move, VirtualDPad::wasd())
-        .with_dual_axis(
-            Action::Move,
-            GamepadStick::LEFT.with_circle_deadzone(STICK_DEADZONE),
-        )
-        .with(Action::Jump, KeyCode::Space)
-        .with(Action::Jump, GamepadButton::South);
-
     commands.spawn((
         Name::new("Player"),
         Player,
         PlayerTransform,
         ThirdPersonCameraTarget,
-        input_map,
+        default_input_map(),
         Mesh3d(meshes.add(Capsule3d::new(0.4, 1.2))),
         MeshMaterial3d(materials.add(StandardMaterial {
             base_color: Color::srgb(0.8, 0.7, 0.6),
