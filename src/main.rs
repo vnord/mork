@@ -166,6 +166,7 @@ fn follow_camera(
     let gamepad_delta = action_state.clamped_axis_pair(&Action::OrbitCameraGamepad)
         * follow_camera.gamepad_sensitivity
         * time.delta_secs();
+    let gamepad_delta = Vec2::new(gamepad_delta.x, -gamepad_delta.y);
     follow_camera.apply_orbit_delta(mouse_delta + gamepad_delta);
 
     let target = player_transform.translation + follow_camera.look_at_offset;
