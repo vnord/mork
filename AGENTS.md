@@ -8,9 +8,11 @@ game.
 
 ## Collaboration Style
 
-- Prefer guided exercises over fully implementing code when the user is learning a new concept.
-- Use TDD for pure logic when possible: write failing tests first, then let the user implement or
-  walk them through the implementation.
+- Default to small, easy-to-review diffs. Prefer one focused change over a broad cleanup, and leave
+  unrelated refactors for a separate step unless they are needed to make the current change work.
+- Before editing, explain the intended change in concrete terms. After editing, summarize what
+  changed, why it changed, and how to verify it.
+- Use TDD for pure logic when possible, with tests that make the next behavior clear.
 - For ECS wiring, explain the entities/components/systems involved and provide small, verifiable
   steps.
 - Keep explanations concrete and tied to the current files.
