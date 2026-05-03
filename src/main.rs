@@ -6,6 +6,7 @@ use mork::plugins::{combat::CombatPlugin, enemy::EnemyPlugin};
 use mork::systems::input::Action;
 
 use bevy_rapier3d::prelude::{Collider, KinematicCharacterController, NoUserData, RigidBody};
+use leafwing_input_manager::input_processing::WithDualAxisProcessingPipelineExt;
 use leafwing_input_manager::prelude::{
     ActionState, GamepadStick, InputMap, MouseMove, VirtualDPad,
 };
@@ -13,6 +14,8 @@ use mork::components::player::Player;
 use mork::systems::movement::{
     calculate_camera_relative_movement_direction, movement_intent_from_axis,
 };
+
+const STICK_DEADZONE: f32 = 0.2;
 
 fn main() {
     App::new()
@@ -72,9 +75,15 @@ fn setup(
 
     let input_map = InputMap::default()
         .with_dual_axis(Action::Move, VirtualDPad::wasd())
-        .with_dual_axis(Action::Move, GamepadStick::LEFT)
+        .with_dual_axis(
+            Action::Move,
+            GamepadStick::LEFT.with_circle_deadzone(STICK_DEADZONE),
+        )
         .with_dual_axis(Action::OrbitCameraMouse, MouseMove::default())
-        .with_dual_axis(Action::OrbitCameraGamepad, GamepadStick::RIGHT);
+        .with_dual_axis(
+            Action::OrbitCameraGamepad,
+            GamepadStick::RIGHT.with_circle_deadzone(STICK_DEADZONE),
+        );
 
     commands.spawn((
         Name::new("Player"),
