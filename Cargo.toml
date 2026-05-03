@@ -24,6 +24,8 @@ leafwing-input-manager = "0.20"
 bevy_egui = "0.39"
 bevy_kira_audio = "0.25"
 bevy_third_person_camera = "0.4.0"
+bevy-tnua = "0.31.0"
+bevy-tnua-rapier3d = "0.16.0"
 
 [dev-dependencies]
 

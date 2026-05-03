@@ -3,11 +3,17 @@ use bevy_third_person_camera::{
     CustomGamepadSettings, ThirdPersonCamera, ThirdPersonCameraPlugin, ThirdPersonCameraTarget,
     Zoom,
 };
+use bevy_tnua::builtins::{TnuaBuiltinWalk, TnuaBuiltinWalkConfig};
+use bevy_tnua::prelude::{
+    TnuaConfig, TnuaController, TnuaControllerPlugin, TnuaScheme, TnuaUserControlsSystems,
+};
+use bevy_tnua_rapier3d::prelude::{TnuaRapier3dPlugin, TnuaRapier3dSensorShape};
 use mork::components::transform::PlayerTransform;
 use mork::plugins::{combat::CombatPlugin, enemy::EnemyPlugin};
 use mork::systems::input::Action;
 
-use bevy_rapier3d::prelude::{Collider, KinematicCharacterController, NoUserData, RigidBody};
+use bevy_rapier3d::parry::shape::SharedShape;
+use bevy_rapier3d::prelude::{Collider, LockedAxes, NoUserData, RigidBody};
 use leafwing_input_manager::input_processing::WithDualAxisProcessingPipelineExt;
 use leafwing_input_manager::prelude::{ActionState, GamepadStick, InputMap, VirtualDPad};
 use mork::components::player::Player;
@@ -16,6 +22,10 @@ use mork::systems::movement::{
 };
 
 const STICK_DEADZONE: f32 = 0.2;
+
+#[derive(TnuaScheme)]
+#[scheme(basis = TnuaBuiltinWalk)]
+enum MovementScheme {}
 
 fn main() {
     App::new()
@@ -30,12 +40,14 @@ fn main() {
         .add_plugins(bevy_rapier3d::prelude::RapierDebugRenderPlugin::default())
         .add_plugins(leafwing_input_manager::prelude::InputManagerPlugin::<Action>::default())
         .add_plugins(ThirdPersonCameraPlugin)
+        .add_plugins(TnuaControllerPlugin::<MovementScheme>::new(Update))
+        .add_plugins(TnuaRapier3dPlugin::new(Update))
         .add_plugins(bevy_egui::EguiPlugin::default())
         .add_plugins(bevy_kira_audio::AudioPlugin)
         .add_plugins(CombatPlugin)
         .add_plugins(EnemyPlugin)
         .add_systems(Startup, setup)
-        .add_systems(Update, move_player)
+        .add_systems(Update, move_player.in_set(TnuaUserControlsSystems))
         .run();
 }
 
@@ -43,6 +55,7 @@ fn setup(
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
+    mut movement_configs: ResMut<Assets<MovementSchemeConfig>>,
 ) {
     commands.spawn((
         Name::new("Main Camera"),
@@ -98,16 +111,25 @@ fn setup(
             ..default()
         })),
         Transform::from_xyz(0.0, 1.0, 0.0),
-        RigidBody::KinematicPositionBased,
+        RigidBody::Dynamic,
         Collider::capsule_y(0.6, 0.4),
-        KinematicCharacterController::default(),
+        TnuaController::<MovementScheme>::default(),
+        TnuaConfig::<MovementScheme>(movement_configs.add(MovementSchemeConfig {
+            basis: TnuaBuiltinWalkConfig {
+                speed: 5.0,
+                float_height: 1.0,
+                max_slope: std::f32::consts::FRAC_PI_4,
+                ..default()
+            },
+        })),
+        TnuaRapier3dSensorShape(SharedShape::cylinder(0.4, 0.35)),
+        LockedAxes::ROTATION_LOCKED_X | LockedAxes::ROTATION_LOCKED_Z,
     ));
 }
 
 #[allow(clippy::needless_pass_by_value, clippy::type_complexity)]
 fn move_player(
-    time: Res<Time>,
-    mut query: Query<(&ActionState<Action>, &mut KinematicCharacterController), With<Player>>,
+    mut query: Query<(&ActionState<Action>, &mut TnuaController<MovementScheme>), With<Player>>,
     camera_transform: Query<&Transform, (With<Camera3d>, Without<Player>)>,
 ) {
     let Ok((action_state, mut controller)) = query.single_mut() else {
@@ -125,7 +147,9 @@ fn move_player(
         camera_transform.rotation * Vec3::NEG_Z,
         camera_transform.rotation * Vec3::X,
     );
-    let speed = 5.0;
 
-    controller.translation = Some(direction * speed * time.delta_secs());
+    controller.basis = TnuaBuiltinWalk {
+        desired_motion: direction,
+        desired_forward: Dir3::new(direction).ok(),
+    };
 }
