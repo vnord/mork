@@ -5,6 +5,7 @@ use leafwing_input_manager::prelude::*;
 pub enum Action {
     #[actionlike(DualAxis)]
     Move,
+    Jump,
     Dodge,
     LightAttack,
     HeavyAttack,

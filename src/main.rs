@@ -3,7 +3,9 @@ use bevy_third_person_camera::{
     CustomGamepadSettings, ThirdPersonCamera, ThirdPersonCameraPlugin, ThirdPersonCameraTarget,
     Zoom,
 };
-use bevy_tnua::builtins::{TnuaBuiltinWalk, TnuaBuiltinWalkConfig};
+use bevy_tnua::builtins::{
+    TnuaBuiltinJump, TnuaBuiltinJumpConfig, TnuaBuiltinWalk, TnuaBuiltinWalkConfig,
+};
 use bevy_tnua::prelude::{
     TnuaConfig, TnuaController, TnuaControllerPlugin, TnuaScheme, TnuaUserControlsSystems,
 };
@@ -25,7 +27,9 @@ const STICK_DEADZONE: f32 = 0.2;
 
 #[derive(TnuaScheme)]
 #[scheme(basis = TnuaBuiltinWalk)]
-enum MovementScheme {}
+enum MovementScheme {
+    Jump(TnuaBuiltinJump),
+}
 
 fn main() {
     App::new()
@@ -97,7 +101,9 @@ fn setup(
         .with_dual_axis(
             Action::Move,
             GamepadStick::LEFT.with_circle_deadzone(STICK_DEADZONE),
-        );
+        )
+        .with(Action::Jump, KeyCode::Space)
+        .with(Action::Jump, GamepadButton::South);
 
     commands.spawn((
         Name::new("Player"),
@@ -121,6 +127,10 @@ fn setup(
                 max_slope: std::f32::consts::FRAC_PI_4,
                 ..default()
             },
+            jump: TnuaBuiltinJumpConfig {
+                height: 2.0,
+                ..default()
+            },
         })),
         TnuaRapier3dSensorShape(SharedShape::cylinder(0.4, 0.35)),
         LockedAxes::ROTATION_LOCKED_X | LockedAxes::ROTATION_LOCKED_Z,
@@ -135,6 +145,7 @@ fn move_player(
     let Ok((action_state, mut controller)) = query.single_mut() else {
         return;
     };
+    controller.initiate_action_feeding();
 
     let Ok(camera_transform) = camera_transform.single() else {
         return;
@@ -152,4 +163,8 @@ fn move_player(
         desired_motion: direction,
         desired_forward: Dir3::new(direction).ok(),
     };
+
+    if action_state.pressed(&Action::Jump) {
+        controller.action(MovementScheme::Jump(TnuaBuiltinJump::default()));
+    }
 }
