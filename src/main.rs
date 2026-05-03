@@ -1,4 +1,5 @@
 use bevy::prelude::*;
+use mork::components::transform::PlayerTransform;
 use mork::plugins::{combat::CombatPlugin, enemy::EnemyPlugin};
 use mork::systems::input::Action;
 
@@ -25,6 +26,7 @@ fn main() {
         .add_plugins(EnemyPlugin)
         .add_systems(Startup, setup)
         .add_systems(Update, move_player)
+        .add_systems(Update, follow_camera)
         .run();
 }
 
@@ -36,7 +38,7 @@ fn setup(
     commands.spawn((
         Name::new("Main Camera"),
         Camera3d::default(),
-        Transform::from_xyz(0.0, 5.0, 10.0).looking_at(Vec3::ZERO, Vec3::Y),
+        Transform::from_xyz(0.0, 5.0, 10.0).looking_at(Vec3::new(0.0, 1.0, 0.0), Vec3::Y),
     ));
 
     commands.spawn((
@@ -66,6 +68,7 @@ fn setup(
     commands.spawn((
         Name::new("Player"),
         Player,
+        PlayerTransform,
         input_map,
         Mesh3d(meshes.add(Capsule3d::new(0.4, 1.2))),
         MeshMaterial3d(materials.add(StandardMaterial {
@@ -93,4 +96,21 @@ fn move_player(
     let speed = 5.0;
 
     controller.translation = Some(direction * speed * time.delta_secs());
+}
+
+fn follow_camera(
+    player_transform: Query<&Transform, (With<PlayerTransform>, Without<Camera3d>)>,
+    mut camera_transform: Query<&mut Transform, (With<Camera3d>, Without<PlayerTransform>)>,
+) {
+    let Ok(player_transform) = player_transform.single() else {
+        return;
+    };
+
+    let Ok(mut camera_transform) = camera_transform.single_mut() else {
+        return;
+    };
+
+    let offset = Vec3::new(0.0, 5.0, 10.0);
+    camera_transform.translation = player_transform.translation + offset;
+    camera_transform.look_at(player_transform.translation, Vec3::Y);
 }
