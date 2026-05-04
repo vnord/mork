@@ -15,6 +15,7 @@ use bevy_tnua::prelude::{
 };
 use bevy_tnua_rapier3d::prelude::{TnuaRapier3dPlugin, TnuaRapier3dSensorShape};
 use leafwing_input_manager::prelude::ActionState;
+use mork::components::combat::PlayerMelee;
 use mork::components::player::Player;
 use mork::components::transform::PlayerTransform;
 use mork::plugins::{combat::CombatPlugin, enemy::EnemyPlugin};
@@ -101,6 +102,7 @@ fn setup(
     commands.spawn((
         Name::new("Player"),
         Player,
+        PlayerMelee::default(),
         PlayerTransform,
         ThirdPersonCameraTarget,
         default_input_map(),
