@@ -63,6 +63,10 @@ Before considering a coding task complete, run the relevant subset of:
 - `cargo clippy --all-targets --all-features -- -D warnings` for lint verification
 - `prek run --all-files` when touching formatting/lint/hook-related files
 
+## Running Cargo tests (agents)
+
+- Invoke **`cargo test --lib`** with **`required_permissions: ["all"]`** so the agent uses the host **`target/`** (sandboxed runs may use a separate cache and rebuild dependencies).
+
 ## Documentation
 
 - Keep `DESIGN.md` and `PHASES.md` up to date when decisions change.
