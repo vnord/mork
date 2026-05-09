@@ -6,6 +6,7 @@ use bevy::gltf::GltfAssetLabel;
 use bevy::image::{ImageAddressMode, ImageLoaderSettings, ImageSampler, ImageSamplerDescriptor};
 use bevy::math::{Affine2, Vec2};
 use bevy::prelude::*;
+use bevy::window::PrimaryWindow;
 use bevy_rapier3d::parry::shape::SharedShape;
 use bevy_rapier3d::prelude::{
     Collider, LockedAxes, NoUserData, PhysicsSet, QueryFilter, ReadRapierContext, RigidBody,
@@ -75,9 +76,28 @@ fn main() {
         .add_plugins(EnemyPlugin)
         .configure_sets(PostUpdate, CameraSyncSet.after(PhysicsSet::StepSimulation))
         .add_systems(Startup, setup)
+        .add_systems(Update, center_cursor_in_primary_window_once)
         .add_systems(Update, move_player.in_set(TnuaUserControlsSystems))
         .add_systems(PostUpdate, prevent_camera_obstruction.after(CameraSyncSet))
         .run();
+}
+
+fn center_cursor_in_primary_window_once(
+    mut windows: Query<&mut Window, With<PrimaryWindow>>,
+    mut done: Local<bool>,
+) {
+    if *done {
+        return;
+    }
+    let Ok(mut window) = windows.single_mut() else {
+        return;
+    };
+    if window.physical_width() == 0 || window.physical_height() == 0 {
+        return;
+    }
+    let center = Vec2::new(window.width() * 0.5, window.height() * 0.5);
+    window.set_cursor_position(Some(center));
+    *done = true;
 }
 
 #[allow(clippy::needless_pass_by_value)]
@@ -175,6 +195,7 @@ fn setup(
                         idle_animation_index: KAYKIT_IDLE_ANIMATION_INDEX,
                         light_attack_animation_index: KAYKIT_LIGHT_ATTACK_ANIMATION_INDEX,
                         hidden_node_names: KNIGHT_HIDDEN_NODES,
+                        weapon_bone_name: Some("1H_Sword"),
                     },
                     SceneRoot(asset_server.load(GltfAssetLabel::Scene(0).from_asset(PLAYER_GLTF))),
                     Transform {

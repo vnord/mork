@@ -1,5 +1,5 @@
 use crate::components::character_visual::{CharacterAnimationNodes, CharacterVisualSetup};
-use crate::components::combat::PlayerMelee;
+use crate::components::combat::{PlayerMelee, PlayerWeaponBone};
 use crate::components::player::Player;
 use bevy::animation::RepeatAnimation;
 use bevy::prelude::*;
@@ -20,6 +20,37 @@ pub const KNIGHT_HIDDEN_NODES: &[&str] = &[
 pub const ROGUE_HIDDEN_NODES: &[&str] =
     &["Knife_Offhand", "1H_Crossbow", "2H_Crossbow", "Throwable"];
 
+pub fn sync_player_weapon_bone(
+    mut commands: Commands,
+    players: Query<Entity, (With<Player>, Without<PlayerWeaponBone>)>,
+    children: Query<&Children>,
+    names: Query<&Name>,
+    setups: Query<&CharacterVisualSetup>,
+) {
+    for player in &players {
+        let Ok(kids) = children.get(player) else {
+            continue;
+        };
+        for visual in kids.iter() {
+            let Ok(setup) = setups.get(visual) else {
+                continue;
+            };
+            let Some(label) = setup.weapon_bone_name else {
+                continue;
+            };
+            for entity in children.iter_descendants(visual) {
+                let Ok(name) = names.get(entity) else {
+                    continue;
+                };
+                if name.as_str() == label {
+                    commands.entity(player).insert(PlayerWeaponBone(entity));
+                    break;
+                }
+            }
+        }
+    }
+}
+
 #[allow(
     clippy::needless_pass_by_value,
     clippy::too_many_arguments,
@@ -28,6 +59,7 @@ pub const ROGUE_HIDDEN_NODES: &[&str] =
 pub fn character_visual_scene_ready(
     trigger: On<SceneInstanceReady>,
     setups: Query<&CharacterVisualSetup>,
+    parents: Query<&ChildOf>,
     asset_server: Res<AssetServer>,
     mut graphs: ResMut<Assets<AnimationGraph>>,
     mut commands: Commands,
@@ -39,6 +71,23 @@ pub fn character_visual_scene_ready(
     let Ok(setup) = setups.get(root) else {
         return;
     };
+
+    let Some(child_of) = parents.get(root).ok() else {
+        return;
+    };
+    let owner = child_of.0;
+
+    if let Some(bone_label) = setup.weapon_bone_name {
+        for descendant in children.iter_descendants(root) {
+            let Ok(name) = names.get(descendant) else {
+                continue;
+            };
+            if name.as_str() == bone_label {
+                commands.entity(owner).insert(PlayerWeaponBone(descendant));
+                break;
+            }
+        }
+    }
 
     for descendant in children.iter_descendants(root) {
         let Ok(name) = names.get(descendant) else {

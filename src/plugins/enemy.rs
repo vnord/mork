@@ -40,6 +40,7 @@ fn spawn_enemy(mut commands: Commands, asset_server: Res<AssetServer>) {
                         idle_animation_index: KAYKIT_IDLE_ANIMATION_INDEX,
                         light_attack_animation_index: KAYKIT_LIGHT_ATTACK_ANIMATION_INDEX,
                         hidden_node_names: ROGUE_HIDDEN_NODES,
+                        weapon_bone_name: None,
                     },
                     SceneRoot(asset_server.load(GltfAssetLabel::Scene(0).from_asset(ENEMY_GLTF))),
                     Transform {

@@ -7,6 +7,7 @@ pub struct CharacterVisualSetup {
     pub idle_animation_index: usize,
     pub light_attack_animation_index: usize,
     pub hidden_node_names: &'static [&'static str],
+    pub weapon_bone_name: Option<&'static str>,
 }
 
 #[derive(Component, Clone, Copy)]
