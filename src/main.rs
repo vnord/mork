@@ -1,7 +1,10 @@
-#[allow(unused_imports)]
 #[cfg(debug_assertions)]
+#[allow(clippy::single_component_path_imports, unused_imports)]
 use bevy_dylib;
 
+use bevy::gltf::GltfAssetLabel;
+use bevy::image::{ImageAddressMode, ImageLoaderSettings, ImageSampler, ImageSamplerDescriptor};
+use bevy::math::{Affine2, Vec2};
 use bevy::prelude::*;
 use bevy_rapier3d::parry::shape::SharedShape;
 use bevy_rapier3d::prelude::{
@@ -19,16 +22,30 @@ use bevy_tnua::prelude::{
 };
 use bevy_tnua_rapier3d::prelude::{TnuaRapier3dPlugin, TnuaRapier3dSensorShape};
 use leafwing_input_manager::prelude::ActionState;
+use mork::constants::{
+    CAPSULE_HALF_HEIGHT, CAPSULE_RADIUS, PLAYER_VISUAL_OFFSET_Y, TNUA_FLOAT_HEIGHT,
+};
+use mork::components::character_visual::CharacterVisualSetup;
 use mork::components::combat::PlayerMelee;
 use mork::components::player::Player;
 use mork::components::transform::PlayerTransform;
 use mork::plugins::{combat::CombatPlugin, enemy::EnemyPlugin};
+use mork::systems::character_visual::{
+    character_visual_scene_ready, KAYKIT_IDLE_ANIMATION_INDEX, KNIGHT_HIDDEN_NODES,
+};
 use mork::systems::input::{Action, default_input_map};
 use mork::systems::movement::{
     calculate_camera_relative_movement_direction, movement_intent_from_axis,
 };
 
 const CAMERA_COLLISION_MARGIN: f32 = 0.2;
+
+const PLAYER_GLTF: &str = "models/third_party/Knight.glb";
+const PLAYER_VISUAL_SCALE: f32 = 1.0;
+const PLAYER_VISUAL_YAW: f32 = std::f32::consts::PI;
+
+const FLOOR_ALBEDO: &str = "textures/floor/cobblestone_floor_08_diff_1k.png";
+const FLOOR_UV_SCALE: f32 = 8.0;
 
 #[derive(TnuaScheme)]
 #[scheme(basis = TnuaBuiltinWalk)]
@@ -62,8 +79,10 @@ fn main() {
         .run();
 }
 
+#[allow(clippy::needless_pass_by_value)]
 fn setup(
     mut commands: Commands,
+    asset_server: Res<AssetServer>,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
     mut movement_configs: ResMut<Assets<MovementSchemeConfig>>,
@@ -92,48 +111,80 @@ fn setup(
         Transform::from_rotation(Quat::from_euler(EulerRot::XYZ, -0.5, 0.5, 0.0)),
     ));
 
+    let floor_albedo = asset_server.load_with_settings(FLOOR_ALBEDO, |settings: &mut _| {
+        *settings = ImageLoaderSettings {
+            sampler: ImageSampler::Descriptor(ImageSamplerDescriptor {
+                address_mode_u: ImageAddressMode::Repeat,
+                address_mode_v: ImageAddressMode::Repeat,
+                ..default()
+            }),
+            ..default()
+        };
+    });
+
     commands.spawn((
         Name::new("Arena Floor"),
         Mesh3d(meshes.add(Plane3d::default().mesh().size(20.0, 20.0))),
         MeshMaterial3d(materials.add(StandardMaterial {
-            base_color: Color::srgb(0.3, 0.3, 0.3),
+            base_color: Color::WHITE,
+            base_color_texture: Some(floor_albedo),
+            perceptual_roughness: 0.95,
+            metallic: 0.0,
+            uv_transform: Affine2::from_scale(Vec2::splat(FLOOR_UV_SCALE)),
             ..default()
         })),
         bevy_rapier3d::prelude::RigidBody::Fixed,
         bevy_rapier3d::prelude::Collider::cuboid(10.0, 0.1, 10.0),
     ));
 
-    commands.spawn((
-        Name::new("Player"),
-        Player,
-        PlayerMelee::default(),
-        PlayerTransform,
-        ThirdPersonCameraTarget,
-        default_input_map(),
-        Mesh3d(meshes.add(Capsule3d::new(0.4, 1.2))),
-        MeshMaterial3d(materials.add(StandardMaterial {
-            base_color: Color::srgb(0.8, 0.7, 0.6),
-            ..default()
-        })),
-        Transform::from_xyz(0.0, 1.0, 0.0),
-        RigidBody::Dynamic,
-        Collider::capsule_y(0.6, 0.4),
-        TnuaController::<MovementScheme>::default(),
-        TnuaConfig::<MovementScheme>(movement_configs.add(MovementSchemeConfig {
-            basis: TnuaBuiltinWalkConfig {
-                speed: 5.0,
-                float_height: 1.0,
-                max_slope: std::f32::consts::FRAC_PI_4,
-                ..default()
-            },
-            jump: TnuaBuiltinJumpConfig {
-                height: 2.0,
-                ..default()
-            },
-        })),
-        TnuaRapier3dSensorShape(SharedShape::cylinder(0.4, 0.35)),
-        LockedAxes::ROTATION_LOCKED_X | LockedAxes::ROTATION_LOCKED_Z,
-    ));
+    commands
+        .spawn((
+            Name::new("Player"),
+            Player,
+            PlayerMelee::default(),
+            PlayerTransform,
+            ThirdPersonCameraTarget,
+            default_input_map(),
+            Visibility::default(),
+            Transform::from_xyz(0.0, 1.0, 0.0),
+            RigidBody::Dynamic,
+            Collider::capsule_y(CAPSULE_HALF_HEIGHT, CAPSULE_RADIUS),
+            TnuaController::<MovementScheme>::default(),
+            TnuaConfig::<MovementScheme>(movement_configs.add(MovementSchemeConfig {
+                basis: TnuaBuiltinWalkConfig {
+                    speed: 5.0,
+                    float_height: TNUA_FLOAT_HEIGHT,
+                    max_slope: std::f32::consts::FRAC_PI_4,
+                    ..default()
+                },
+                jump: TnuaBuiltinJumpConfig {
+                    height: 2.0,
+                    ..default()
+                },
+            })),
+            TnuaRapier3dSensorShape(SharedShape::cylinder(0.4, 0.35)),
+            LockedAxes::ROTATION_LOCKED_X | LockedAxes::ROTATION_LOCKED_Z,
+        ))
+        .with_children(|parent| {
+            parent
+                .spawn((
+                    Name::new("Player visual"),
+                    CharacterVisualSetup {
+                        gltf_asset_path: PLAYER_GLTF,
+                        idle_animation_index: KAYKIT_IDLE_ANIMATION_INDEX,
+                        hidden_node_names: KNIGHT_HIDDEN_NODES,
+                    },
+                    SceneRoot(
+                        asset_server.load(GltfAssetLabel::Scene(0).from_asset(PLAYER_GLTF)),
+                    ),
+                    Transform {
+                        translation: Vec3::new(0.0, PLAYER_VISUAL_OFFSET_Y, 0.0),
+                        rotation: Quat::from_rotation_y(PLAYER_VISUAL_YAW),
+                        scale: Vec3::splat(PLAYER_VISUAL_SCALE),
+                    },
+                ))
+                .observe(character_visual_scene_ready);
+        });
 }
 
 #[allow(clippy::needless_pass_by_value, clippy::type_complexity)]
