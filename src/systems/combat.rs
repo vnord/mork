@@ -47,7 +47,11 @@ pub fn tick_hit_flash(
     }
 }
 
-#[allow(clippy::needless_pass_by_value, clippy::type_complexity)]
+#[allow(
+    clippy::needless_pass_by_value,
+    clippy::type_complexity,
+    clippy::too_many_arguments
+)]
 pub fn player_light_attack(
     time: Res<Time>,
     rapier: ReadRapierContext,
@@ -63,7 +67,11 @@ pub fn player_light_attack(
         With<Player>,
     >,
     camera: Query<&GlobalTransform, (With<Camera3d>, Without<Player>)>,
-    enemies: Query<(&MeshMaterial3d<StandardMaterial>, &GlobalTransform), With<Enemy>>,
+    child_of: Query<&ChildOf>,
+    children: Query<&Children>,
+    mesh_materials: Query<&MeshMaterial3d<StandardMaterial>>,
+    enemy_transforms: Query<&GlobalTransform, With<Enemy>>,
+    enemy_marker: Query<(), With<Enemy>>,
 ) {
     let Ok(rapier) = rapier.single() else {
         return;
@@ -92,7 +100,7 @@ pub fn player_light_attack(
 
     let hit_shape = Collider::ball(LIGHT_ATTACK_HIT_RADIUS);
 
-    let mut hit_entity: Option<Entity> = None;
+    let mut hit_enemy_root: Option<Entity> = None;
     let mut best_dist_sq = f32::MAX;
 
     let filter = QueryFilter::default()
@@ -108,23 +116,38 @@ pub fn player_light_attack(
             if collider_entity == player_entity {
                 return true;
             }
-            let Ok((_, enemy_tf)) = enemies.get(collider_entity) else {
+            let Some(enemy_root) =
+                ancestor_with_enemy(collider_entity, &child_of, &enemy_marker)
+            else {
+                return true;
+            };
+            let Ok(enemy_tf) = enemy_transforms.get(enemy_root) else {
                 return true;
             };
             let dist_sq = enemy_tf.translation().distance_squared(origin);
             if dist_sq < best_dist_sq {
                 best_dist_sq = dist_sq;
-                hit_entity = Some(collider_entity);
+                hit_enemy_root = Some(enemy_root);
             }
             true
         },
     );
 
-    let Some(target) = hit_entity else {
+    let Some(enemy_root) = hit_enemy_root else {
         return;
     };
 
-    let Ok((mesh_mat, _)) = enemies.get(target) else {
+    let Some(mesh_entity) =
+        first_mesh_material_entity(enemy_root, &children, &mesh_materials)
+    else {
+        commands.entity(enemy_root).insert(ExternalImpulse {
+            impulse: swing_dir * LIGHT_ATTACK_IMPULSE + Vec3::Y * 1.2,
+            ..default()
+        });
+        return;
+    };
+
+    let Ok(mesh_mat) = mesh_materials.get(mesh_entity) else {
         return;
     };
 
@@ -136,16 +159,50 @@ pub fn player_light_attack(
         mat.base_color = LIGHT_HIT_FLASH_COLOR;
     }
 
-    commands.entity(target).insert((
-        HitFlash {
-            remaining: LIGHT_HIT_FLASH_SECS,
-            restore,
-        },
-        ExternalImpulse {
-            impulse: swing_dir * LIGHT_ATTACK_IMPULSE + Vec3::Y * 1.2,
-            ..default()
-        },
-    ));
+    commands.entity(mesh_entity).insert(HitFlash {
+        remaining: LIGHT_HIT_FLASH_SECS,
+        restore,
+    });
+
+    commands.entity(enemy_root).insert(ExternalImpulse {
+        impulse: swing_dir * LIGHT_ATTACK_IMPULSE + Vec3::Y * 1.2,
+        ..default()
+    });
+}
+
+fn ancestor_with_enemy(
+    mut entity: Entity,
+    child_of: &Query<&ChildOf>,
+    enemies: &Query<(), With<Enemy>>,
+) -> Option<Entity> {
+    loop {
+        if enemies.contains(entity) {
+            return Some(entity);
+        }
+        let Ok(link) = child_of.get(entity) else {
+            return None;
+        };
+        entity = link.parent();
+    }
+}
+
+fn first_mesh_material_entity(
+    entity: Entity,
+    children: &Query<&Children>,
+    mesh_materials: &Query<&MeshMaterial3d<StandardMaterial>>,
+) -> Option<Entity> {
+    if mesh_materials.get(entity).is_ok() {
+        return Some(entity);
+    }
+    let Ok(kids) = children.get(entity) else {
+        return None;
+    };
+    for child in kids.iter() {
+        if let Some(found) = first_mesh_material_entity(child, children, mesh_materials) {
+            return Some(found);
+        }
+    }
+    None
 }
 
 #[cfg(test)]
