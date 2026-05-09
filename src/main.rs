@@ -22,16 +22,17 @@ use bevy_tnua::prelude::{
 };
 use bevy_tnua_rapier3d::prelude::{TnuaRapier3dPlugin, TnuaRapier3dSensorShape};
 use leafwing_input_manager::prelude::ActionState;
-use mork::constants::{
-    CAPSULE_HALF_HEIGHT, CAPSULE_RADIUS, PLAYER_VISUAL_OFFSET_Y, TNUA_FLOAT_HEIGHT,
-};
 use mork::components::character_visual::CharacterVisualSetup;
 use mork::components::combat::PlayerMelee;
 use mork::components::player::Player;
 use mork::components::transform::PlayerTransform;
+use mork::constants::{
+    CAPSULE_HALF_HEIGHT, CAPSULE_RADIUS, PLAYER_VISUAL_OFFSET_Y, TNUA_FLOAT_HEIGHT,
+};
 use mork::plugins::{combat::CombatPlugin, enemy::EnemyPlugin};
 use mork::systems::character_visual::{
-    character_visual_scene_ready, KAYKIT_IDLE_ANIMATION_INDEX, KNIGHT_HIDDEN_NODES,
+    KAYKIT_IDLE_ANIMATION_INDEX, KAYKIT_LIGHT_ATTACK_ANIMATION_INDEX, KNIGHT_HIDDEN_NODES,
+    character_visual_scene_ready,
 };
 use mork::systems::input::{Action, default_input_map};
 use mork::systems::movement::{
@@ -172,11 +173,10 @@ fn setup(
                     CharacterVisualSetup {
                         gltf_asset_path: PLAYER_GLTF,
                         idle_animation_index: KAYKIT_IDLE_ANIMATION_INDEX,
+                        light_attack_animation_index: KAYKIT_LIGHT_ATTACK_ANIMATION_INDEX,
                         hidden_node_names: KNIGHT_HIDDEN_NODES,
                     },
-                    SceneRoot(
-                        asset_server.load(GltfAssetLabel::Scene(0).from_asset(PLAYER_GLTF)),
-                    ),
+                    SceneRoot(asset_server.load(GltfAssetLabel::Scene(0).from_asset(PLAYER_GLTF))),
                     Transform {
                         translation: Vec3::new(0.0, PLAYER_VISUAL_OFFSET_Y, 0.0),
                         rotation: Quat::from_rotation_y(PLAYER_VISUAL_YAW),

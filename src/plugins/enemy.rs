@@ -2,7 +2,8 @@ use crate::components::character_visual::CharacterVisualSetup;
 use crate::components::enemy::Enemy;
 use crate::constants::{CAPSULE_HALF_HEIGHT, CAPSULE_RADIUS, ENEMY_VISUAL_OFFSET_Y};
 use crate::systems::character_visual::{
-    character_visual_scene_ready, KAYKIT_IDLE_ANIMATION_INDEX, ROGUE_HIDDEN_NODES,
+    KAYKIT_IDLE_ANIMATION_INDEX, KAYKIT_LIGHT_ATTACK_ANIMATION_INDEX, ROGUE_HIDDEN_NODES,
+    character_visual_scene_ready,
 };
 use bevy::gltf::GltfAssetLabel;
 use bevy::prelude::*;
@@ -37,11 +38,10 @@ fn spawn_enemy(mut commands: Commands, asset_server: Res<AssetServer>) {
                     CharacterVisualSetup {
                         gltf_asset_path: ENEMY_GLTF,
                         idle_animation_index: KAYKIT_IDLE_ANIMATION_INDEX,
+                        light_attack_animation_index: KAYKIT_LIGHT_ATTACK_ANIMATION_INDEX,
                         hidden_node_names: ROGUE_HIDDEN_NODES,
                     },
-                    SceneRoot(
-                        asset_server.load(GltfAssetLabel::Scene(0).from_asset(ENEMY_GLTF)),
-                    ),
+                    SceneRoot(asset_server.load(GltfAssetLabel::Scene(0).from_asset(ENEMY_GLTF))),
                     Transform {
                         translation: Vec3::new(0.0, ENEMY_VISUAL_OFFSET_Y, 0.0),
                         rotation: Quat::from_rotation_y(ENEMY_VISUAL_YAW),

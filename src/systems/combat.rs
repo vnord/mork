@@ -88,6 +88,7 @@ pub fn player_light_attack(
     }
 
     melee.light_cooldown = LIGHT_ATTACK_COOLDOWN_SECS;
+    melee.light_attack_anim_pending = true;
 
     let Ok(cam_tf) = camera.single() else {
         return;
@@ -116,8 +117,7 @@ pub fn player_light_attack(
             if collider_entity == player_entity {
                 return true;
             }
-            let Some(enemy_root) =
-                ancestor_with_enemy(collider_entity, &child_of, &enemy_marker)
+            let Some(enemy_root) = ancestor_with_enemy(collider_entity, &child_of, &enemy_marker)
             else {
                 return true;
             };
@@ -137,8 +137,7 @@ pub fn player_light_attack(
         return;
     };
 
-    let Some(mesh_entity) =
-        first_mesh_material_entity(enemy_root, &children, &mesh_materials)
+    let Some(mesh_entity) = first_mesh_material_entity(enemy_root, &children, &mesh_materials)
     else {
         commands.entity(enemy_root).insert(ExternalImpulse {
             impulse: swing_dir * LIGHT_ATTACK_IMPULSE + Vec3::Y * 1.2,
