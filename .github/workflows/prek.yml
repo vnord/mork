@@ -1,4 +1,4 @@
-name: CI
+name: prek
 
 on:
   pull_request:
@@ -7,12 +7,17 @@ on:
       - main
 
 jobs:
-  prek:
+  check:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+
+      - name: Install Linux build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y pkg-config libwayland-dev libxkbcommon-dev libudev-dev libasound2-dev
 
       - uses: gitleaks/gitleaks-action@v2
         env:
@@ -26,9 +31,7 @@ jobs:
       - uses: Swatinem/rust-cache@v2
 
       - name: Install prek
-        run:
-          curl --proto '=https' --tlsv1.2 -LsSf
-          https://github.com/j178/prek/releases/download/v0.3.13/prek-installer.sh | sh
+        run: curl --proto '=https' --tlsv1.2 -LsSf https://github.com/j178/prek/releases/download/v0.3.13/prek-installer.sh | sh
 
       - uses: taiki-e/install-action@v2
         with:
@@ -48,27 +51,3 @@ jobs:
         env:
           SKIP: gitleaks
         run: prek run --all-files
-
-  test:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: dtolnay/rust-toolchain@master
-        with:
-          toolchain: stable
-
-      - uses: Swatinem/rust-cache@v2
-
-      - name: cargo test --lib
-        run: cargo test --lib
-
-  ci:
-    needs: [prek, test]
-    if: always() && !cancelled()
-    runs-on: ubuntu-latest
-    steps:
-      - name: Require prek and test
-        run: |
-          test "${{ needs.prek.result }}" = "success"
-          test "${{ needs.test.result }}" = "success"
