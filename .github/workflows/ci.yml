@@ -7,10 +7,16 @@ on:
       - main
 
 jobs:
-  ci:
+  prek:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - uses: dtolnay/rust-toolchain@master
         with:
@@ -20,20 +26,11 @@ jobs:
       - uses: Swatinem/rust-cache@v2
 
       - name: Install prek
-        run:
-          curl --proto '=https' --tlsv1.2 -LsSf
-          https://github.com/j178/prek/releases/download/v0.3.13/prek-installer.sh | sh
+        run: curl --proto '=https' --tlsv1.2 -LsSf https://github.com/j178/prek/releases/download/v0.3.13/prek-installer.sh | sh
 
       - uses: taiki-e/install-action@v2
         with:
           tool: taplo-cli
-
-      - name: Install gitleaks
-        run: |
-          set -euo pipefail
-          mkdir -p "$HOME/.local/bin"
-          version=8.24.0
-          curl -sSL "https://github.com/gitleaks/gitleaks/releases/download/v${version}/gitleaks_${version}_linux_x64.tar.gz" | tar -xz -C "$HOME/.local/bin" gitleaks
 
       - uses: actions/setup-node@v4
         with:
@@ -46,7 +43,30 @@ jobs:
         run: echo "$HOME/.local/bin" >> "$GITHUB_PATH"
 
       - name: prek run --all-files
+        env:
+          SKIP: gitleaks
         run: prek run --all-files
+
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: stable
+
+      - uses: Swatinem/rust-cache@v2
 
       - name: cargo test --lib
         run: cargo test --lib
+
+  ci:
+    needs: [prek, test]
+    if: always() && !cancelled()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Require prek and test
+        run: |
+          test "${{ needs.prek.result }}" = "success"
+          test "${{ needs.test.result }}" = "success"
