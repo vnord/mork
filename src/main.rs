@@ -19,7 +19,7 @@ use mork::components::combat::PlayerMelee;
 use mork::components::player::Player;
 use mork::components::transform::PlayerTransform;
 use mork::plugins::{combat::CombatPlugin, enemy::EnemyPlugin};
-use mork::systems::input::{default_input_map, Action};
+use mork::systems::input::{Action, default_input_map};
 use mork::systems::movement::{
     calculate_camera_relative_movement_direction, movement_intent_from_axis,
 };

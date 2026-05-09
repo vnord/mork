@@ -1,6 +1,8 @@
 ---
 name: hint-led-coding
-description: Use when the user wants to write most of the code themselves while Codex collaborates through hints, questions, review, and small next steps instead of direct implementation.
+description:
+  Use when the user wants to write most of the code themselves while Codex collaborates through
+  hints, questions, review, and small next steps instead of direct implementation.
 metadata:
   short-description: User codes, Codex hints
 ---

@@ -1,6 +1,6 @@
+use crate::components::enemy::Enemy;
 use bevy::prelude::*;
 use bevy_rapier3d::prelude::{Collider, RigidBody};
-use crate::components::enemy::Enemy;
 
 pub struct EnemyPlugin;
 

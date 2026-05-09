@@ -20,8 +20,8 @@ game.
 ## Library Preference
 
 - Prefer well-maintained, functional Rust/Bevy crates or plugins over custom implementations for
-  established game systems such as camera controllers, character controllers, input helpers,
-  physics queries, pathfinding, UI widgets, and asset pipelines.
+  established game systems such as camera controllers, character controllers, input helpers, physics
+  queries, pathfinding, UI widgets, and asset pipelines.
 - Before building a custom solution for a common subsystem, check for current libraries, evaluate
   maintenance status, Bevy version compatibility, scope fit, and integration cost, then explain the
   recommendation.

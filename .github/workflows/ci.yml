@@ -20,7 +20,9 @@ jobs:
       - uses: Swatinem/rust-cache@v2
 
       - name: Install prek
-        run: curl --proto '=https' --tlsv1.2 -LsSf https://github.com/j178/prek/releases/download/v0.3.13/prek-installer.sh | sh
+        run:
+          curl --proto '=https' --tlsv1.2 -LsSf
+          https://github.com/j178/prek/releases/download/v0.3.13/prek-installer.sh | sh
 
       - uses: taiki-e/install-action@v2
         with:
