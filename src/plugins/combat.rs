@@ -6,6 +6,6 @@ pub struct CombatPlugin;
 
 impl Plugin for CombatPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(Update, (player_light_attack, tick_hit_flash));
+        app.add_systems(Update, (player_light_attack, tick_hit_flash).chain());
     }
 }

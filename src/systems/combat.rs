@@ -27,6 +27,7 @@ pub fn xz_plane_push_dir(world_dir: Vec3) -> Vec3 {
     }
 }
 
+#[allow(clippy::needless_pass_by_value)]
 pub fn tick_hit_flash(
     time: Res<Time>,
     mut commands: Commands,
@@ -129,8 +130,7 @@ pub fn player_light_attack(
 
     let restore = materials
         .get(&mesh_mat.0)
-        .map(|m| m.base_color)
-        .unwrap_or(Color::WHITE);
+        .map_or(Color::WHITE, |m| m.base_color);
 
     if let Some(mat) = materials.get_mut(&mesh_mat.0) {
         mat.base_color = LIGHT_HIT_FLASH_COLOR;
