@@ -65,7 +65,9 @@ Before considering a coding task complete, run the relevant subset of:
 
 ## Running Cargo (agents)
 
-- Invoke **`cargo`** commands (`cargo check`, `cargo test`, `cargo clippy`, etc.) with **`required_permissions: ["all"]`** (unsandboxed) so the agent uses the host **`target/`** and lockfile; sandboxed runs may use a separate Cargo cache and rebuild dependencies unnecessarily.
+- Invoke **`cargo`** commands (`cargo check`, `cargo test`, `cargo clippy`, etc.) with
+  **`required_permissions: ["all"]`** (unsandboxed) so the agent uses the host **`target/`** and
+  lockfile; sandboxed runs may use a separate Cargo cache and rebuild dependencies unnecessarily.
 
 ## Documentation
 

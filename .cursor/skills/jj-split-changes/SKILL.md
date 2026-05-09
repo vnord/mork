@@ -1,6 +1,9 @@
 ---
 name: jj-split-changes
-description: Split the current Jujutsu working-copy changeset into many smaller, well-described, logically self-contained named diffs. Use when explicitly asked to split jj changes, changesets, diffs, or work into smaller jj changes.
+description:
+  Split the current Jujutsu working-copy changeset into many smaller, well-described, logically
+  self-contained named diffs. Use when explicitly asked to split jj changes, changesets, diffs, or
+  work into smaller jj changes.
 disable-model-invocation: true
 ---
 
@@ -8,9 +11,11 @@ disable-model-invocation: true
 
 ## Goal
 
-Turn the current jj working-copy change into a stack of small named changes. Each change should be logically self-contained, reviewable, and as minimal as practical.
+Turn the current jj working-copy change into a stack of small named changes. Each change should be
+logically self-contained, reviewable, and as minimal as practical.
 
-Use jj commands only for version-control operations. Do not use git commands to split, commit, amend, reset, or rewrite history.
+Use jj commands only for version-control operations. Do not use git commands to split, commit,
+amend, reset, or rewrite history.
 
 ## Workflow
 
@@ -23,8 +28,10 @@ Use jj commands only for version-control operations. Do not use git commands to 
 2. Identify candidate slices:
    - Group by behavior or intent, not just by file.
    - Prefer the smallest slice that still compiles or makes conceptual sense.
-   - Keep mechanical formatting, generated files, docs, tests, and behavior changes separate when they can stand alone.
-   - Avoid preserving compatibility between in-progress slices unless a later slice needs to be independently runnable.
+   - Keep mechanical formatting, generated files, docs, tests, and behavior changes separate when
+     they can stand alone.
+   - Avoid preserving compatibility between in-progress slices unless a later slice needs to be
+     independently runnable.
 
 3. Present the split plan before mutating:
    - Proposed order from bottom to top.
@@ -37,7 +44,8 @@ Use jj commands only for version-control operations. Do not use git commands to 
      ```bash
      jj commit -m "describe the first slice" <filesets>
      ```
-     The selected filesets remain in the current change; the remaining changes move into a new working-copy change on top.
+     The selected filesets remain in the current change; the remaining changes move into a new
+     working-copy change on top.
    - For partial-file slices, use jj's interactive split/commit flow:
      ```bash
      jj commit -i -m "describe the selected slice"
@@ -46,7 +54,8 @@ Use jj commands only for version-control operations. Do not use git commands to 
      ```bash
      jj split
      ```
-     Do not pretend to drive an interactive diff editor through a non-interactive shell. Ask the user to make the hunk selection, then continue from the resulting state.
+     Do not pretend to drive an interactive diff editor through a non-interactive shell. Ask the
+     user to make the hunk selection, then continue from the resulting state.
 
 5. Repeat from the new working-copy change:
    - Re-run `jj status` and `jj diff --summary`.
@@ -54,7 +63,8 @@ Use jj commands only for version-control operations. Do not use git commands to 
    - Continue until the remaining working-copy change is itself one coherent named diff.
 
 6. Use `jj absorb` when refining an existing stack:
-   - Consider it when the working-copy change contains small fixes that clearly belong in earlier mutable changes.
+   - Consider it when the working-copy change contains small fixes that clearly belong in earlier
+     mutable changes.
    - Preview the relevant stack first:
      ```bash
      jj log -r 'ancestors(@, 10)'
@@ -72,7 +82,8 @@ Use jj commands only for version-control operations. Do not use git commands to 
      ```bash
      jj op show -p
      ```
-   - Treat remaining changes as intentional; `jj absorb` leaves ambiguous changes in the source revision.
+   - Treat remaining changes as intentional; `jj absorb` leaves ambiguous changes in the source
+     revision.
 
 7. Repair and polish the stack when needed:
    - Split an earlier slice instead of restarting the whole workflow:
@@ -95,6 +106,7 @@ Use jj commands only for version-control operations. Do not use git commands to 
      ```
 
 8. Name the final remaining change:
+
    ```bash
    jj describe -m "describe the final slice"
    ```
@@ -127,8 +139,13 @@ Part 1
 
 - Do not run destructive jj operations unless the user explicitly approves them.
 - Do not squash, abandon, rebase broad ranges, or edit unrelated changes while splitting.
-- Do not use `jj absorb` as a substitute for planning independent changes; use it for fixups into an existing stack.
-- Do not use `jj squash` or `jj rebase` to paper over a bad split plan; explain the intended move first.
-- If unrelated user changes are present, leave them untouched or make them a separate named slice only with user approval.
-- If a clean split is impossible without editing code, stop and explain the blocker before making code changes.
-- If tests fail after splitting but the original mixed change also failed, report that clearly instead of silently changing behavior.
+- Do not use `jj absorb` as a substitute for planning independent changes; use it for fixups into an
+  existing stack.
+- Do not use `jj squash` or `jj rebase` to paper over a bad split plan; explain the intended move
+  first.
+- If unrelated user changes are present, leave them untouched or make them a separate named slice
+  only with user approval.
+- If a clean split is impossible without editing code, stop and explain the blocker before making
+  code changes.
+- If tests fail after splitting but the original mixed change also failed, report that clearly
+  instead of silently changing behavior.

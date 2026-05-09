@@ -1,6 +1,6 @@
 use bevy::color::LinearRgba;
-use bevy::prelude::*;
 use bevy::math::primitives::Sphere;
+use bevy::prelude::*;
 use bevy_rapier3d::prelude::ExternalImpulse;
 use leafwing_input_manager::prelude::ActionState;
 
@@ -11,9 +11,9 @@ use crate::constants::CAPSULE_RADIUS;
 use crate::systems::input::Action;
 
 #[cfg(debug_assertions)]
-use bevy::math::{Isometry3d, primitives::Capsule3d};
-#[cfg(debug_assertions)]
 use bevy::gizmos::prelude::{GizmoPrimitive3d, Gizmos};
+#[cfg(debug_assertions)]
+use bevy::math::{Isometry3d, primitives::Capsule3d};
 
 pub const LIGHT_ATTACK_COOLDOWN_SECS: f32 = 0.42;
 
@@ -111,7 +111,8 @@ pub(crate) fn compute_light_attack_blade(
     enemies: &Query<(Entity, &GlobalTransform), With<Enemy>>,
     weapon_tf: Option<&GlobalTransform>,
 ) -> Option<LightAttackBladeFrame> {
-    if !(LIGHT_ATTACK_ACTIVE_START_SECS..=LIGHT_ATTACK_ACTIVE_END_SECS).contains(&elapsed_since_attack)
+    if !(LIGHT_ATTACK_ACTIVE_START_SECS..=LIGHT_ATTACK_ACTIVE_END_SECS)
+        .contains(&elapsed_since_attack)
     {
         return None;
     }
@@ -197,13 +198,7 @@ pub fn tick_hit_burst(
 )]
 pub fn player_light_attack_input(
     time: Res<Time>,
-    mut player: Query<
-        (
-            &ActionState<Action>,
-            &mut PlayerMelee,
-        ),
-        With<Player>,
-    >,
+    mut player: Query<(&ActionState<Action>, &mut PlayerMelee), With<Player>>,
 ) {
     let Ok((action, mut melee)) = player.single_mut() else {
         return;
@@ -270,8 +265,7 @@ pub fn player_light_attack_hit_detection(
     };
 
     let player_pos = player_tf.translation();
-    let weapon_tf = weapon_bone
-        .and_then(|bone| transforms.get(bone.0).ok());
+    let weapon_tf = weapon_bone.and_then(|bone| transforms.get(bone.0).ok());
     let Some(frame) = compute_light_attack_blade(
         player_entity,
         player_pos,
@@ -279,8 +273,7 @@ pub fn player_light_attack_hit_detection(
         elapsed,
         &enemies,
         weapon_tf,
-    )
-    else {
+    ) else {
         return;
     };
 
@@ -485,8 +478,7 @@ pub fn debug_draw_light_attack_blade(
     };
 
     let player_pos = player_tf.translation();
-    let weapon_tf = weapon_bone
-        .and_then(|bone| transforms.get(bone.0).ok());
+    let weapon_tf = weapon_bone.and_then(|bone| transforms.get(bone.0).ok());
     let Some(frame) = compute_light_attack_blade(
         player_entity,
         player_pos,
@@ -494,12 +486,14 @@ pub fn debug_draw_light_attack_blade(
         elapsed,
         &enemies,
         weapon_tf,
-    )
-    else {
+    ) else {
         return;
     };
 
-    let capsule = Capsule3d::new(LIGHT_ATTACK_BLADE_RADIUS, 2.0 * LIGHT_ATTACK_BLADE_HALF_LENGTH);
+    let capsule = Capsule3d::new(
+        LIGHT_ATTACK_BLADE_RADIUS,
+        2.0 * LIGHT_ATTACK_BLADE_HALF_LENGTH,
+    );
     let rotation = Quat::from_rotation_arc(Vec3::Y, frame.blade_axis);
     gizmos.primitive_3d(
         &capsule,
@@ -507,7 +501,11 @@ pub fn debug_draw_light_attack_blade(
         Color::srgba(0.2, 1.0, 0.45, 0.9),
     );
 
-    gizmos.line(frame.blade_a, frame.blade_b, Color::srgba(1.0, 1.0, 0.35, 0.95));
+    gizmos.line(
+        frame.blade_a,
+        frame.blade_b,
+        Color::srgba(1.0, 1.0, 0.35, 0.95),
+    );
 }
 
 #[cfg(test)]
