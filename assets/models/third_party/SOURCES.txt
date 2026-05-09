@@ -1,0 +1,9 @@
+Knight.glb — KayKit Character Pack (Adventures), CC0.
+Source: https://github.com/KayKit-Game-Assets/KayKit-Character-Pack-Adventures-1.0
+See LICENSE.txt in that repository.
+
+Rogue.glb — same pack and license as Knight.glb.
+
+Floor texture — Poly Haven, CC0.
+cobblestone_floor_08 (diffuse 1k PNG)
+https://polyhaven.com/a/cobblestone_floor_08
