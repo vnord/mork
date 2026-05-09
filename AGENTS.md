@@ -46,6 +46,14 @@ Use `jj` (Jujutsu) for version control workflow guidance in this repo.
   bookmark.
 - Do not run destructive VCS commands unless explicitly requested.
 
+## Web / WASM
+
+- `rust-toolchain.toml` asks rustup for the **`wasm32-unknown-unknown`** target in this directory
+  (Cargo does not install targets; rustup does).
+- Browser builds use **Trunk** and `index.html` at the repo root. From the project directory:
+  `env -u NO_COLOR trunk serve --open` if `NO_COLOR=1` breaks Trunk’s CLI, otherwise
+  `trunk serve --open`. Release-size checks: `trunk build --release`.
+
 ## Quality Gates
 
 Before considering a coding task complete, run the relevant subset of:
