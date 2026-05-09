@@ -811,6 +811,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "bevy_dylib"
+version = "0.18.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f142f72bbbc1a61338bf6da5dc7cf6dcf223683b9d53bcd635ebff4bfeb5308f"
+dependencies = [
+ "bevy_internal",
+]
+
+[[package]]
 name = "bevy_ecs"
 version = "0.18.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4220,6 +4229,7 @@ dependencies = [
  "bevy",
  "bevy-tnua",
  "bevy-tnua-rapier3d",
+ "bevy_dylib",
  "bevy_egui",
  "bevy_kira_audio",
  "bevy_rapier3d",

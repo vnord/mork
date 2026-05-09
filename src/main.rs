@@ -1,3 +1,7 @@
+#[allow(unused_imports)]
+#[cfg(debug_assertions)]
+use bevy_dylib;
+
 use bevy::prelude::*;
 use bevy_rapier3d::parry::shape::SharedShape;
 use bevy_rapier3d::prelude::{

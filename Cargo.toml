@@ -19,6 +19,7 @@ roguelite = []
 
 [dependencies]
 bevy = "0.18"
+bevy_dylib = "0.18"
 bevy_rapier3d = { version = "0.33", features = ["debug-render-3d"] }
 leafwing-input-manager = "0.20"
 bevy_egui = "0.39"
