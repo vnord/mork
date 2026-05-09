@@ -43,15 +43,6 @@ repos:
 
       - id: gitleaks
         name: gitleaks
-        entry: gitleaks protect --staged --verbose
+        entry: gitleaks detect --verbose --redact
         language: system
         pass_filenames: false
-
-      - id: no-commit-to-main
-        name: no commit to main
-        entry:
-          bash -c 'branch=$(git symbolic-ref HEAD 2>/dev/null); [ "$branch" = "refs/heads/main" ] &&
-          echo "Direct commits to main are forbidden. Use a feature branch." && exit 1 || exit 0'
-        language: system
-        pass_filenames: false
-        always_run: true

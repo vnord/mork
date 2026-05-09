@@ -1,0 +1,42 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dtolnay/rust-toolchain@master
+        with:
+          components: rustfmt, clippy
+
+      - uses: Swatinem/rust-cache@v2
+
+      - name: Install prek
+        run: curl --proto '=https' --tlsv1.2 -LsSf https://github.com/j178/prek/releases/download/v0.3.13/prek-installer.sh | sh
+
+      - uses: taiki-e/install-action@v2
+        with:
+          tool: taplo-cli,gitleaks
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Install prettier
+        run: npm install -g prettier@3
+
+      - name: Add prek to PATH
+        run: echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+
+      - name: prek run --all-files
+        run: prek run --all-files
+
+      - name: cargo test --lib
+        run: cargo test --lib
