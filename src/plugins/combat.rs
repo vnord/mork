@@ -1,8 +1,6 @@
 use bevy::prelude::*;
 
-use crate::systems::character_visual::{
-    sync_player_light_attack_animation, sync_player_weapon_bone,
-};
+use crate::systems::character_visual::{sync_player_light_attack_animation, sync_player_weapon_bone};
 #[cfg(debug_assertions)]
 use crate::systems::combat::debug_draw_light_attack_blade;
 use crate::systems::combat::{
