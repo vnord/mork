@@ -30,9 +30,11 @@ use mork::components::transform::PlayerTransform;
 use mork::constants::{
     CAPSULE_HALF_HEIGHT, CAPSULE_RADIUS, PLAYER_VISUAL_OFFSET_Y, TNUA_FLOAT_HEIGHT,
 };
-use mork::plugins::{combat::CombatPlugin, enemy::EnemyPlugin};
+use mork::plugins::{
+    character_visual::CharacterVisualPlugin, combat::CombatPlugin, enemy::EnemyPlugin,
+};
 use mork::systems::character_visual::{
-    KAYKIT_IDLE_ANIMATION_INDEX, KAYKIT_LIGHT_ATTACK_ANIMATION_INDEX, KNIGHT_HIDDEN_NODES,
+    KAYKIT_IDLE_ANIMATION, KAYKIT_LIGHT_ATTACK_ANIMATION, KNIGHT_HIDDEN_NODES,
     character_visual_scene_ready,
 };
 use mork::systems::input::{Action, default_input_map};
@@ -72,6 +74,7 @@ fn main() {
         .add_plugins(TnuaRapier3dPlugin::new(Update))
         .add_plugins(bevy_egui::EguiPlugin::default())
         .add_plugins(bevy_kira_audio::AudioPlugin)
+        .add_plugins(CharacterVisualPlugin)
         .add_plugins(CombatPlugin)
         .add_plugins(EnemyPlugin)
         .configure_sets(PostUpdate, CameraSyncSet.after(PhysicsSet::StepSimulation))
@@ -187,13 +190,14 @@ fn setup(
             LockedAxes::ROTATION_LOCKED_X | LockedAxes::ROTATION_LOCKED_Z,
         ))
         .with_children(|parent| {
+            let player_gltf = asset_server.load(PLAYER_GLTF);
             parent
                 .spawn((
                     Name::new("Player visual"),
                     CharacterVisualSetup {
-                        gltf_asset_path: PLAYER_GLTF,
-                        idle_animation_index: KAYKIT_IDLE_ANIMATION_INDEX,
-                        light_attack_animation_index: KAYKIT_LIGHT_ATTACK_ANIMATION_INDEX,
+                        gltf_handle: player_gltf,
+                        idle_animation_name: KAYKIT_IDLE_ANIMATION,
+                        light_attack_animation_name: KAYKIT_LIGHT_ATTACK_ANIMATION,
                         hidden_node_names: KNIGHT_HIDDEN_NODES,
                         weapon_bone_name: Some("1H_Sword"),
                     },

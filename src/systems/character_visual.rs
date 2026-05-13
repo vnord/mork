@@ -1,12 +1,14 @@
-use crate::components::character_visual::{CharacterAnimationNodes, CharacterVisualSetup};
+use crate::components::character_visual::{
+    CharacterAnimationInitPending, CharacterAnimationNodes, CharacterVisualSetup,
+};
 use crate::components::combat::{PlayerMelee, PlayerWeaponBone};
 use crate::components::player::Player;
 use bevy::animation::RepeatAnimation;
 use bevy::prelude::*;
 use bevy::scene::SceneInstanceReady;
 
-pub const KAYKIT_IDLE_ANIMATION_INDEX: usize = 36;
-pub const KAYKIT_LIGHT_ATTACK_ANIMATION_INDEX: usize = 2;
+pub const KAYKIT_IDLE_ANIMATION: &str = "Idle";
+pub const KAYKIT_LIGHT_ATTACK_ANIMATION: &str = "1H_Melee_Attack_Slice_Horizontal";
 
 pub const KNIGHT_HIDDEN_NODES: &[&str] = &[
     "1H_Sword_Offhand",
@@ -60,12 +62,9 @@ pub fn character_visual_scene_ready(
     trigger: On<SceneInstanceReady>,
     setups: Query<&CharacterVisualSetup>,
     parents: Query<&ChildOf>,
-    asset_server: Res<AssetServer>,
-    mut graphs: ResMut<Assets<AnimationGraph>>,
     mut commands: Commands,
     children: Query<&Children>,
     names: Query<&Name>,
-    mut players: Query<&mut AnimationPlayer>,
 ) {
     let root = trigger.entity;
     let Ok(setup) = setups.get(root) else {
@@ -103,30 +102,67 @@ pub fn character_visual_scene_ready(
         }
     }
 
-    let idle_clip = asset_server.load(
-        GltfAssetLabel::Animation(setup.idle_animation_index).from_asset(setup.gltf_asset_path),
-    );
-    let light_clip = asset_server.load(
-        GltfAssetLabel::Animation(setup.light_attack_animation_index)
-            .from_asset(setup.gltf_asset_path),
-    );
-    let (graph, node_indices) = AnimationGraph::from_clips([idle_clip, light_clip]);
-    let graph_handle = graphs.add(graph);
-    let idle_node = node_indices[0];
-    let light_node = node_indices[1];
-    commands.entity(root).insert(CharacterAnimationNodes {
-        idle: idle_node,
-        light_attack: light_node,
-    });
+    commands.entity(root).insert(CharacterAnimationInitPending);
+}
 
-    for descendant in children.iter_descendants(root) {
-        let Ok(mut player) = players.get_mut(descendant) else {
+#[allow(clippy::needless_pass_by_value)]
+pub fn finish_character_visual_animations(
+    mut commands: Commands,
+    asset_server: Res<AssetServer>,
+    gltf_assets: Res<Assets<Gltf>>,
+    mut graphs: ResMut<Assets<AnimationGraph>>,
+    children: Query<&Children>,
+    mut players: Query<&mut AnimationPlayer>,
+    pending: Query<(Entity, &CharacterVisualSetup), With<CharacterAnimationInitPending>>,
+) {
+    for (root, setup) in &pending {
+        let Some(gltf) = gltf_assets.get(&setup.gltf_handle) else {
             continue;
         };
-        player.play(idle_node).repeat();
+        let Some(idle_clip) = gltf.named_animations.get(setup.idle_animation_name) else {
+            error!(
+                asset = ?asset_server.get_path(setup.gltf_handle.id()),
+                name = setup.idle_animation_name,
+                "character glTF missing idle animation"
+            );
+            commands
+                .entity(root)
+                .remove::<CharacterAnimationInitPending>();
+            continue;
+        };
+        let Some(light_clip) = gltf.named_animations.get(setup.light_attack_animation_name) else {
+            error!(
+                asset = ?asset_server.get_path(setup.gltf_handle.id()),
+                name = setup.light_attack_animation_name,
+                "character glTF missing light attack animation"
+            );
+            commands
+                .entity(root)
+                .remove::<CharacterAnimationInitPending>();
+            continue;
+        };
+        let (graph, node_indices) =
+            AnimationGraph::from_clips([idle_clip.clone(), light_clip.clone()]);
+        let graph_handle = graphs.add(graph);
+        let idle_node = node_indices[0];
+        let light_node = node_indices[1];
+        commands.entity(root).insert(CharacterAnimationNodes {
+            idle: idle_node,
+            light_attack: light_node,
+        });
+
+        for descendant in children.iter_descendants(root) {
+            let Ok(mut player) = players.get_mut(descendant) else {
+                continue;
+            };
+            player.play(idle_node).repeat();
+            commands
+                .entity(descendant)
+                .insert(AnimationGraphHandle(graph_handle.clone()));
+        }
         commands
-            .entity(descendant)
-            .insert(AnimationGraphHandle(graph_handle.clone()));
+            .entity(root)
+            .remove::<CharacterAnimationInitPending>();
     }
 }
 

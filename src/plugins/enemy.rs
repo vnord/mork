@@ -2,7 +2,7 @@ use crate::components::character_visual::CharacterVisualSetup;
 use crate::components::enemy::Enemy;
 use crate::constants::{CAPSULE_HALF_HEIGHT, CAPSULE_RADIUS, ENEMY_VISUAL_OFFSET_Y};
 use crate::systems::character_visual::{
-    KAYKIT_IDLE_ANIMATION_INDEX, KAYKIT_LIGHT_ATTACK_ANIMATION_INDEX, ROGUE_HIDDEN_NODES,
+    KAYKIT_IDLE_ANIMATION, KAYKIT_LIGHT_ATTACK_ANIMATION, ROGUE_HIDDEN_NODES,
     character_visual_scene_ready,
 };
 use bevy::gltf::GltfAssetLabel;
@@ -32,13 +32,14 @@ fn spawn_enemy(mut commands: Commands, asset_server: Res<AssetServer>) {
             Collider::capsule_y(CAPSULE_HALF_HEIGHT, CAPSULE_RADIUS),
         ))
         .with_children(|parent| {
+            let enemy_gltf = asset_server.load(ENEMY_GLTF);
             parent
                 .spawn((
                     Name::new("Enemy visual"),
                     CharacterVisualSetup {
-                        gltf_asset_path: ENEMY_GLTF,
-                        idle_animation_index: KAYKIT_IDLE_ANIMATION_INDEX,
-                        light_attack_animation_index: KAYKIT_LIGHT_ATTACK_ANIMATION_INDEX,
+                        gltf_handle: enemy_gltf,
+                        idle_animation_name: KAYKIT_IDLE_ANIMATION,
+                        light_attack_animation_name: KAYKIT_LIGHT_ATTACK_ANIMATION,
                         hidden_node_names: ROGUE_HIDDEN_NODES,
                         weapon_bone_name: None,
                     },
